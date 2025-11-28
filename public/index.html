@@ -615,15 +615,24 @@
         async function loadCSV() {
             try {
                 // Zkusit načíst z lokálního souboru, pokud selže, použít raw GitLab URL
-                let csvUrl = 'unique_normalized_titles_ais - final.csv';
+                const localUrl = 'unique_normalized_titles_ais - final.csv';
+                const gitlabRawUrl = 'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/unique_normalized_titles_ais%20-%20final.csv';
                 
-                // Pokud jsme na GitLab Pages nebo raw, použít raw URL
-                if (window.location.hostname.includes('gitlab') || window.location.hostname.includes('digilab')) {
-                    csvUrl = 'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/unique_normalized_titles_ais%20-%20final.csv';
+                let response;
+                let text;
+                
+                // Zkusit lokální soubor
+                try {
+                    response = await fetch(localUrl);
+                    if (!response.ok) throw new Error('Local file not found');
+                    text = await response.text();
+                } catch (localError) {
+                    // Pokud lokální načtení selže, použít raw GitLab URL
+                    console.log('Lokální soubor nenalezen, načítám z GitLabu...');
+                    response = await fetch(gitlabRawUrl);
+                    if (!response.ok) throw new Error('GitLab file not found');
+                    text = await response.text();
                 }
-                
-                const response = await fetch(csvUrl);
-                const text = await response.text();
                 const lines = text.split('\n');
                 
                 // Parsování hlavičky

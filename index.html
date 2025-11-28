@@ -614,8 +614,25 @@
         // Načtení a parsování CSV
         async function loadCSV() {
             try {
-                const response = await fetch('unique_normalized_titles_ais - final.csv');
-                const text = await response.text();
+                // Zkusit načíst z lokálního souboru, pokud selže, použít raw GitLab URL
+                const localUrl = 'unique_normalized_titles_ais - final.csv';
+                const gitlabRawUrl = 'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/unique_normalized_titles_ais%20-%20final.csv';
+                
+                let response;
+                let text;
+                
+                // Zkusit lokální soubor
+                try {
+                    response = await fetch(localUrl);
+                    if (!response.ok) throw new Error('Local file not found');
+                    text = await response.text();
+                } catch (localError) {
+                    // Pokud lokální načtení selže, použít raw GitLab URL
+                    console.log('Lokální soubor nenalezen, načítám z GitLabu...');
+                    response = await fetch(gitlabRawUrl);
+                    if (!response.ok) throw new Error('GitLab file not found');
+                    text = await response.text();
+                }
                 const lines = text.split('\n');
                 
                 // Parsování hlavičky
