@@ -614,44 +614,24 @@
         // Načtení a parsování CSV
         async function loadCSV() {
             try {
-                // Seznam možných URL pro načtení CSV
-                const urls = [
-                    // Lokální soubory (relativní cesta)
-                    'unique_normalized_titles_ais - final.csv',
-                    'data.csv',
-                    'public/unique_normalized_titles_ais - final.csv',
-                    'public/data.csv',
-                    // GitLab raw URL s různými formáty
-                    'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/data.csv',
-                    'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/unique_normalized_titles_ais%20-%20final.csv',
-                    'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/unique_normalized_titles_ais%20-%20final.csv',
-                    'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/data.csv'
-                ];
+                // Zkusit načíst z lokálního souboru, pokud selže, použít raw GitLab URL
+                const localUrl = 'unique_normalized_titles_ais - final.csv';
+                const gitlabRawUrl = 'https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/unique_normalized_titles_ais%20-%20final.csv';
                 
-                let text = null;
-                let lastError = null;
+                let response;
+                let text;
                 
-                // Zkusit načíst z každé URL dokud jedna neuspěje
-                for (const url of urls) {
-                    try {
-                        console.log('Zkouším načíst z:', url);
-                        const response = await fetch(url);
-                        if (response.ok) {
-                            text = await response.text();
-                            console.log('Úspěšně načteno z:', url);
-                            break;
-                        } else {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                    } catch (error) {
-                        console.warn('Chyba při načítání z', url, ':', error.message);
-                        lastError = error;
-                        continue;
-                    }
-                }
-                
-                if (!text) {
-                    throw new Error('Nepodařilo se načíst CSV z žádného zdroje. Poslední chyba: ' + (lastError ? lastError.message : 'Neznámá chyba'));
+                // Zkusit lokální soubor
+                try {
+                    response = await fetch(localUrl);
+                    if (!response.ok) throw new Error('Local file not found');
+                    text = await response.text();
+                } catch (localError) {
+                    // Pokud lokální načtení selže, použít raw GitLab URL
+                    console.log('Lokální soubor nenalezen, načítám z GitLabu...');
+                    response = await fetch(gitlabRawUrl);
+                    if (!response.ok) throw new Error('GitLab file not found');
+                    text = await response.text();
                 }
                 const lines = text.split('\n');
                 
@@ -749,26 +729,7 @@
                 document.getElementById('loading').style.display = 'none';
             } catch (error) {
                 console.error('Chyba při načítání CSV:', error);
-                const loadingEl = document.getElementById('loading');
-                loadingEl.innerHTML = `
-                    <div style="color: #d32f2f; padding: 20px;">
-                        <h3>Chyba při načítání dat</h3>
-                        <p><strong>Chyba:</strong> ${error.message}</p>
-                        <p><strong>Řešení:</strong></p>
-                        <ul style="text-align: left; display: inline-block;">
-                            <li>Zkontroluj konzoli prohlížeče (F12) pro více informací</li>
-                            <li>Ujisti se, že máš přístup k internetu</li>
-                            <li>Zkus otevřít stránku lokálně pomocí: <code>python3 -m http.server 8000</code></li>
-                            <li>Nebo použij raw GitLab URL přímo v prohlížeči</li>
-                        </ul>
-                        <p style="margin-top: 20px;">
-                            <a href="https://git.digilab.nfa.cz/jonas.kucharsky/databaze-zvukovych-materialu/-/raw/main/public/index.html" 
-                               style="color: #8b5cf6; text-decoration: underline;">
-                                Zkusit otevřít přes raw GitLab URL
-                            </a>
-                        </p>
-                    </div>
-                `;
+                document.getElementById('loading').textContent = 'Chyba při načítání dat: ' + error.message;
             }
         }
 
