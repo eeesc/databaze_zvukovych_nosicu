@@ -1,0 +1,11 @@
+pages:
+  stage: deploy
+  script:
+    - mkdir -p public
+    - cp index.html "unique_normalized_titles_ais - final.csv" public/ || true
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+
