@@ -1,8 +1,7 @@
 pages:
   stage: deploy
   script:
-    - mkdir -p public
-    - cp index.html "unique_normalized_titles_ais - final.csv" public/ || true
+    - echo "Deploying static files to GitLab Pages"
   artifacts:
     paths:
       - public
